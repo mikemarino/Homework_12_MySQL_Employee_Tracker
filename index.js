@@ -4,6 +4,7 @@ const mysql = require('mysql');
 const figlet = require("figlet");
 const chalk = require("chalk");
 const cTable = require('console.table');
+// const { connect } = require('node:http2');
 // const menu = require('./utils/control.js')
 
 const connection = mysql.createConnection({
@@ -18,12 +19,32 @@ const connection = mysql.createConnection({
 });
 
 connection.connect((err) => {
-    
-    if (err) throw err;
-    menu();
-    return;
-    
-},
+
+        if (err) throw err;
+        console.log(
+            chalk.red(
+                figlet.textSync(`Employee Tracker`, {
+                    font: 'speed',
+                    horizontalLayout: "default",
+                    verticalLayout: "default",
+                    width: 500,
+                    whitespaceBreak: true
+                })
+            ));
+        console.log(
+            chalk.red(
+                figlet.textSync(`                    node.js`, {
+                    font: 'small',
+                    horizontalLayout: "default",
+                    verticalLayout: "default",
+                    width: 100,
+                    whitespaceBreak: true
+                })
+            ));
+        menu();
+        return;
+
+    },
     console.log("Yes")
 
 
@@ -99,24 +120,198 @@ const menu = () => {
 const viewAll = () => {
 
     const query = 'SELECT * FROM employee';
+
+    // let query =
+    //     'SELECT employee.emp_id, employee.first_name, employee.last_name, role.title, department.department, role.salary ';
+    // query +=
+    //     'FROM employee INNER JOIN role ON (employee.role_id = role.role_id) '
+    // query +=
+    //     'INNER JOIN department ON (role.dept_id = department.dept_id)'
     connection.query(query, (err, res) => {
         if (err) throw err;
-
         console.table(res);
-        // let show = res(({
-        //     emp_id,
-        //     first_name,
-        //     last_name,
-        //     role_id,
-        //     manager_id
-        // }) => {
-        //     console.table([{id: emp_id, name: first_name}]
-        //         // `${emp_id}, ${first_name}, ${last_name}`
-        //     );
-        // });
         menu();
     });
 };
+1
+
+const viewDept = () => {
+    let query =
+        'SELECT department.department, employee.first_name, employee.last_name, role.title, role.salary ';
+    query +=
+        'FROM employee INNER JOIN role ON (employee.role_id = role.role_id) '
+    query +=
+        'INNER JOIN department ON (role.dept_id = department.dept_id) ORDER BY department.department'
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        menu();
+    });
+};
+
+const viewManager = () => {
+    let query =
+        'SELECT CONCAT(b.last_name, " ", b.first_name) AS Manager, CONCAT(a.last_name, " ", a.first_name) AS "Direct Report" ';
+    query +=
+        'FROM employee a INNER JOIN employee b ON (b.emp_id = a.manager_id) '
+    query +=
+        'ORDER BY Manager'
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        menu();
+    });
+};
+
+// const departmentChoice = () => {
+//     let query = 'SELECT department FROM department;'
+//     deptArray = [];
+//     connection.query(query, (err, results) => {
+//         if (err) throw err;
+//         results.forEach(({
+//             department
+//         }) => {
+//             deptArray.push(department);
+//         });
+//     })
+//     return deptArray;
+// };
+
+
+const roleChoice = () => {
+    let query = 'SELECT title FROM role;'
+    roleArray = [];
+    connection.query(query, (err, results) => {
+        if (err) throw err;
+        results.forEach(({
+            title
+        }) => {
+            roleArray.push(title);
+        });
+    })
+    return roleArray;
+};
+
+const managerChoice = () => {
+    let query = 'SELECT last_name AS manager FROM employee ;'
+    managerArray = [];
+    connection.query(query, (err, results) => {
+        if (err) throw err;
+        results.forEach(({
+            manager
+        }) => {
+            managerArray.push(manager);
+        });
+    })
+    return managerArray;
+};
+
+const addEmployee = () => {
+    // let query = "SELECT DISTINCT department.department, role.title FROM role INNER JOIN department ON (role.dept_id = department.dept_id)"
+    // connection.query(query, (err, results) => {
+    //     if (err) throw err;
+    const promptUser = () => {
+        inquirer.prompt([{
+                    type: 'input',
+                    name: 'first_name',
+                    message: 'What is the new employees first name?',
+                },
+                {
+                    type: 'input',
+                    name: 'last_name',
+                    message: 'What is the new employees last name?',
+                },
+                // {
+                //     name: 'department',
+                //     type: 'rawlist',
+                //     choices: departmentChoice(),
+                //     message: 'What department does the employee belong to?',
+                // },
+                {
+                    name: 'title',
+                    type: 'rawlist',
+                    choices: roleChoice(),
+                    message: 'What is the new employees title?',
+                },
+                {
+                    name: 'manager',
+                    type: 'rawlist',
+                    choices: managerChoice(),
+                    message: 'Who is the new employees manager?',
+                },
+
+            ])
+            //     .then((answers) => {
+            //         console.log(answers.title)
+            //         console.log(answers.manager)
+            //         menu();
+            // })
+
+
+
+            .then((answers) => {
+                connection.query(
+                        'INSERT INTO employee SET ?', {
+                            first_name: answers.first_name,
+                            last_name: answers.last_name,
+                        },
+                    (err) => {
+                        if (err) throw err;
+                        console.log('Employee created');
+                    });
+                menu();
+
+            })
+
+    };
+    
+    promptUser();
+}
+//     );
+
+// }
+
+// {
+//     name: 'choice',
+//     type: 'manager',
+//     choices() {
+
+
+
+
+
+//         let query1 = 'SELECT DISTINCT CONCAT(b.last_name, " ", b.first_name) AS Manager, ';
+//         query1 +=
+//             'FROM employee a INNER JOIN employee b ON (b.emp_id = a.manager_id) '
+//         query1 +=
+//             'ORDER BY Manager'
+//         const choiceArray = [];
+
+//         connection.query(query1, (err, res) => {
+//             if (err) throw err;
+//             choiceArray.push(res);
+//             console.table(res);
+//             return choiceArray;
+//         })
+//     },
+//     message: 'What is the new employees title?',
+// },
+
+// {
+//     type: 'input',
+//     name: 'bid',
+//     message: 'What is the new employees last name?',
+// },
+// {
+//     type: 'input',
+//     name: 'bid',
+//     message: 'What is the new employees last name?',
+// },
+
+
+
+
+
 
 
 // const init = async () => {
@@ -127,7 +322,7 @@ const viewAll = () => {
 //     }
 
 
-    
+
 
 // };
 

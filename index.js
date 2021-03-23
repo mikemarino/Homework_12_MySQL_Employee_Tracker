@@ -4,6 +4,10 @@ const mysql = require('mysql');
 const figlet = require("figlet");
 const chalk = require("chalk");
 const cTable = require('console.table');
+const {
+    rightPadder
+} = require('easy-table');
+// const { map } = require('bluebird');
 // const { connect } = require('node:http2');
 // const menu = require('./utils/control.js')
 
@@ -179,18 +183,30 @@ const viewManager = () => {
 
 
 const roleChoice = () => {
-    let query = 'SELECT title FROM role;'
-    roleArray = [];
-    connection.query(query, (err, results) => {
+    let query = 'SELECT * FROM role;'
+    let roleArray = [];
+    connection.query(query, (err, rolesQ) => {
         if (err) throw err;
-        results.forEach(({
-            title
-        }) => {
-            roleArray.push(title);
+        rolesQ.map(function (roles) {
+            roleArray.push(roles.title);
+            // return roles.title
         });
     })
+    // console.log(roleArray);
     return roleArray;
 };
+
+function roleID(value, callback) {
+    let queryRole = 'SELECT role_id FROM role WHERE role.title = ?'
+    let getID = [];
+    connection.query(queryRole, [value], (err, res) => {
+        if (err) throw err;
+        getID = res.map((role) => {
+            return role.role_id;
+        })
+        callback(getID);
+    })
+}
 
 const managerChoice = () => {
     let query = 'SELECT last_name AS manager FROM employee ;'
@@ -206,10 +222,36 @@ const managerChoice = () => {
     return managerArray;
 };
 
+function managerID(value, callback) {
+    let queryManager = 'SELECT emp_id FROM employee WHERE employee.last_name = ?'
+    let getID = [];
+    connection.query(queryManager, [value], (err, res) => {
+        if (err) throw err;
+        getID = res.map((manager) => {
+            return manager.emp_id;
+        })
+        callback(getID);
+    })
+}
+
+function createEmployee(a, b, c, d) {
+    connection.query(
+        'INSERT INTO employee SET ?', {
+            first_name: a,
+            last_name: b,
+            role_id: c,
+            manager_id: d
+        },
+        (err) => {
+            if (err) throw err;
+            console.log('Employee created');
+        });
+
+    menu();
+
+}
+
 const addEmployee = () => {
-    // let query = "SELECT DISTINCT department.department, role.title FROM role INNER JOIN department ON (role.dept_id = department.dept_id)"
-    // connection.query(query, (err, results) => {
-    //     if (err) throw err;
     const promptUser = () => {
         inquirer.prompt([{
                     type: 'input',
@@ -221,12 +263,6 @@ const addEmployee = () => {
                     name: 'last_name',
                     message: 'What is the new employees last name?',
                 },
-                // {
-                //     name: 'department',
-                //     type: 'rawlist',
-                //     choices: departmentChoice(),
-                //     message: 'What department does the employee belong to?',
-                // },
                 {
                     name: 'title',
                     type: 'rawlist',
@@ -239,34 +275,137 @@ const addEmployee = () => {
                     choices: managerChoice(),
                     message: 'Who is the new employees manager?',
                 },
-
             ])
-            //     .then((answers) => {
-            //         console.log(answers.title)
-            //         console.log(answers.manager)
-            //         menu();
-            // })
-
-
-
             .then((answers) => {
-                connection.query(
-                        'INSERT INTO employee SET ?', {
-                            first_name: answers.first_name,
-                            last_name: answers.last_name,
-                        },
-                    (err) => {
-                        if (err) throw err;
-                        console.log('Employee created');
-                    });
-                menu();
-
+                // call back functions here.  roleID take the title into the function, where it finds the ID,
+                // then it returns a callback where it passes the ID to a function (a)
+                // the value for (a) can only exist within the roleID function 
+                // this requires that you nest additional funcions if they need to use (a)
+                roleID(answers.title, (a) => {
+                    managerID(answers.manager, (b) => {
+                        createEmployee(answers.first_name, answers.last_name, a, b)
+                    })
+                })
             })
 
+
+
+
+
+
+
+        // let test = roleID(answers.title)
+
+
+
+
+
+        // console.log(test)
+
+        // roleID = '';
+        // // var managerID = "";
+        // const queryRole =
+        //     'SELECT role_id FROM role WHERE role.title = ?'
+        // connection.query(queryRole, [answers.title], (err, res) => {
+        //     if (err) throw err;
+        //     // setRole(res)
+
+
+        //     roleID.push(res)
+        // });
+
+        // function setRole(value) {
+        //     roleID = value;
+        //     return roleID;
+        // }
+
+
+
+        // console.log(roleID)
+
+
+        // const setRole = (value) => { roleID = value}
+        // console.log(roleID)
+
+        // const queryManager =
+        //     'SELECT emp_id FROM employee WHERE last_name = ?'
+        // connection.query(queryManager, [answers.manager], (err, res) => {
+        //     if (err) throw err;
+        //     managerID = res;
+
+        //     // return managerID;
+        // }) console.log(managerID)
+
+        // connection.query(
+        //     'INSERT INTO employee SET ?', {
+        //         first_name: answers.first_name,
+        //         last_name: answers.last_name,
+        //     },
+        //     (err) => {
+        //         if (err) throw err;
+        //         console.log('Employee created');
+        //     });
+
+        // menu();
+
+        // console.log(roleID);
+        // })
+        // .then((answers) => {
+        //     connection.query(
+        //         'INSERT INTO employee SET ?', {
+        //             first_name: answers.first_name,
+        //             last_name: answers.last_name,
+        //         },
+        //         (err) => {
+        //             if (err) throw err;
+        //             console.log('Employee created');
+        //         });
+        //     menu();
+        // });
+
+
+
+
+
+
+
     };
-    
+    // )
+    // };
+
     promptUser();
 }
+
+
+//     .then((answers) => {
+//         console.log(answers.title)
+//         console.log(answers.manager)
+//         menu();
+// })
+
+
+const removeEmployee = () => {
+    let query = 'SELECT emp_id, first_name, " ", last_name FROM employee ;'
+    employeeArray = [];
+    connection.query(query, (err, results) => {
+        if (err) throw err;
+        results.forEach(({
+            manager
+        }) => {
+            managerArray.push(manager);
+        });
+    })
+    return managerArray;
+};
+
+
+
+
+
+
+
+
+
 //     );
 
 // }

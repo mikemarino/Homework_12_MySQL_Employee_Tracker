@@ -19,7 +19,7 @@ SELECT * FROM employee;
 USE employee_db;
 
 /* Insert 3 Rows into your new table */
-INSERT INTO department (name)
+INSERT INTO department (department)
 VALUES ("Sales"), ("Engineering"), ("Legal"), ("Finance"), ("Audit"), ("Human Resources");
 
 SELECT * FROM department;

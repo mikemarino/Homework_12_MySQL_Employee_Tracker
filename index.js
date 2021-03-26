@@ -3,7 +3,7 @@ const fs = require('fs');
 const mysql = require('mysql');
 const figlet = require("figlet");
 const chalk = require("chalk");
-const cTable = require('console.table');
+require('console.table');
 // const { rawListeners } = require('../upenn-phi-fsf-pt-12-2020-u-c/12-MySQL/02-Homework/Main/db/connection');
 
 // const { map } = require('bluebird');
@@ -17,7 +17,7 @@ const connection = mysql.createConnection({
     // Your username
     user: 'root',
     // Be sure to update with your own MySQL password!
-    password: '',
+    password: 'Philly!11',
     database: 'employee_DB',
 });
 
@@ -122,9 +122,9 @@ const viewAll = () => {
     let query =
         'SELECT employee.emp_id, employee.first_name, employee.last_name, role.title, department.department, role.salary ';
     query +=
-        'FROM employee INNER JOIN role ON (employee.role_id = role.role_id) '
+        'FROM employee LEFT JOIN role ON (employee.role_id = role.role_id) '
     query +=
-        'INNER JOIN department ON (role.dept_id = department.dept_id)'
+        'LEFT JOIN department ON (role.dept_id = department.dept_id)'
     connection.query(query, (err, res) => {
         if (err) throw err;
         console.table(res);
@@ -135,9 +135,9 @@ const viewDept = () => {
     let query =
         'SELECT department.department, employee.first_name, employee.last_name, role.title, role.salary ';
     query +=
-        'FROM employee INNER JOIN role ON (employee.role_id = role.role_id) '
+        'FROM employee LEFT JOIN role ON (employee.role_id = role.role_id) '
     query +=
-        'INNER JOIN department ON (role.dept_id = department.dept_id) ORDER BY department.department'
+        'LEFT JOIN department ON (role.dept_id = department.dept_id) ORDER BY department.department'
     connection.query(query, (err, res) => {
         if (err) throw err;
         console.table(res);
@@ -149,7 +149,7 @@ const viewManager = () => {
     let query =
         'SELECT CONCAT(b.last_name, " ", b.first_name) AS Manager, CONCAT(a.last_name, " ", a.first_name) AS "Direct Report" ';
     query +=
-        'FROM employee a INNER JOIN employee b ON (b.emp_id = a.manager_id) '
+        'FROM employee a LEFT JOIN employee b ON (b.emp_id = a.manager_id) '
     query +=
         'ORDER BY Manager'
     connection.query(query, (err, res) => {
